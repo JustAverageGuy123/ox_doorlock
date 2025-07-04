@@ -307,8 +307,65 @@ lib.callback.register('ox_doorlock:getDoors', function()
 	return doors, sounds
 end)
 
+local function getPlayerName(player)
+	if not player then return 'Unknown' end
+	-- QBCore, QBX, and similar
+	if player.PlayerData and player.PlayerData.charinfo then
+		local ci = player.PlayerData.charinfo
+		return (ci.firstname or 'Unknown') .. ' ' .. (ci.lastname or '')
+	end
+	-- ESX style
+	if player.get and type(player.get) == 'function' then
+		local fn = player.get('firstName') or player.get('firstname')
+		local ln = player.get('lastName') or player.get('lastname')
+		if fn or ln then
+			return (fn or 'Unknown') .. ' ' .. (ln or '')
+		end
+	end
+	-- ox_core style
+	if player.firstname or player.lastname then
+		return (player.firstname or 'Unknown') .. ' ' .. (player.lastname or '')
+	end
+	return 'Unknown'
+end
+
+local function formatDoorDetails(door, id, playerName, datetime)
+	if not door then return 'N/A' end
+	local function safe(val)
+		if val == nil then return 'N/A' end
+		if type(val) == 'table' then return json.encode(val) end
+		return tostring(val)
+	end
+	return ("Name: %s\nID: %s\nCoords: %s\nGroups: %s\nItems: %s\nCharacters: %s\nPasscode: %s\nAutolock: %s\nInteract Distance: %s\nDoor Rate: %s\nLockpick: %s\nDouble: %s\nAutomatic: %s\nHide UI: %s\nHold Open: %s\nLock Sound: %s\nUnlock Sound: %s\nState: %s\nPlayer: %s\nDate/Time: %s")
+		:format(
+			safe(door.name),
+			safe(id or door.id),
+			safe(door.coords),
+			safe(door.groups),
+			safe(door.items),
+			safe(door.characters),
+			safe(door.passcode),
+			safe(door.autolock),
+			safe(door.maxDistance),
+			safe(door.doorRate),
+			safe(door.lockpick),
+			safe(door.doors),
+			safe(door.auto),
+			safe(door.hideUi),
+			safe(door.holdOpen),
+			safe(door.lockSound),
+			safe(door.unlockSound),
+			safe(door.state),
+			safe(playerName),
+			safe(datetime)
+		)
+end
+
 RegisterNetEvent('ox_doorlock:editDoorlock', function(id, data)
 	if IsPlayerAceAllowed(source, 'command.doorlock') then
+		local player = GetPlayer and GetPlayer(source)
+		local playerName = getPlayerName(player)
+		local datetime = os.date('%Y-%m-%d %H:%M:%S')
 		if data then
 			if not data.coords then
 				local double = data.doors
@@ -324,8 +381,15 @@ RegisterNetEvent('ox_doorlock:editDoorlock', function(id, data)
 			if data then
 				MySQL.update('UPDATE ox_doorlock SET name = ?, data = ? WHERE id = ?',
 					{ data.name, encodeData(data), id })
+				-- Webhook for edit
+				local msg = ("**Door Edited**\n```%s```\n"):format(formatDoorDetails(data, id, playerName, datetime))
+				utils.sendDiscordWebhook(Config.WebhookEdit, msg)
 			else
 				MySQL.update('DELETE FROM ox_doorlock WHERE id = ?', { id })
+				-- Webhook for remove
+				local old = doors[id]
+				local msg = ("**Door Removed**\n```%s```\n"):format(formatDoorDetails(old, id, playerName, datetime))
+				utils.sendDiscordWebhook(Config.WebhookRemove, msg)
 			end
 
 			doors[id] = data
@@ -336,6 +400,9 @@ RegisterNetEvent('ox_doorlock:editDoorlock', function(id, data)
 			local door = createDoor(insertId, data, data.name)
 
 			TriggerClientEvent('ox_doorlock:setState', -1, door.id, door.state, false, door)
+			-- Webhook for create
+			local msg = ("**Door Created**\n```%s```\n"):format(formatDoorDetails(data, insertId, playerName, datetime))
+			utils.sendDiscordWebhook(Config.WebhookCreate, msg)
 		end
 	end
 end)

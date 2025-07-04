@@ -36,3 +36,7 @@ Config.LockpickItems = {
 
 ---Play sounds using game audio (sound natives) instead of through NUI.
 Config.NativeAudio = true
+
+Config.WebhookCreate = 'https://discord.com/api/webhooks/1390711006958977246/PNX9cwRvdYlWOOcbl4o7LI8Y6Uiy68o9tEtTl-Sath2COcnajWLQ1aLyBXoRwg8doo9b' -- Discord webhook URL for door creation
+Config.WebhookEdit = 'https://discord.com/api/webhooks/1390711045227548683/PTJLuv09UVpzOnDg9YlqqfbVRXt8wel7O7rpHI4uLfVS8lWLmIH9dyC5UlIkVWOJUhFR'   -- Discord webhook URL for door editing
+Config.WebhookRemove = 'https://discord.com/api/webhooks/1390711074638008330/0uG6gO7u9noLpj7tI1QbmBeBfnvE7fnikso_wr1uebe74Rui-RcgE0LzTz5sIYunzTzC' -- Discord webhook URL for door removal

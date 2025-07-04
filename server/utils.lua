@@ -24,12 +24,20 @@ function utils.getFilesInDirectory(path, pattern)
 	return files, fileCount
 end
 
-local frameworks = { 'es_extended', 'ND_Core', 'ox_core', 'qbx_core' }
+function utils.sendDiscordWebhook(url, message)
+	if url and url ~= '' then
+		PerformHttpRequest(url, function() end, 'POST', json.encode({ content = message }), {
+			['Content-Type'] = 'application/json'
+		})
+	end
+end
+
+local frameworks = { 'es_extended', 'ND_Core', 'ox_core', 'qbx_core', 'qb-core' }
 local sucess = false
 
 for i = 1, #frameworks do
 	local framework = frameworks[i]
-	
+
 	if GetResourceState(framework):find('start') then
 		require(('server.framework.%s'):format(framework:lower()))
 		sucess = true
